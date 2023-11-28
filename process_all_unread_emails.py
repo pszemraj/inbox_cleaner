@@ -43,12 +43,6 @@ def get_openai_client():
     return OpenAI()
 
 
-def get_user_name():
-    user_first_name = input("Enter your first name: ")
-    user_last_name = input("Enter your last name: ")
-    return user_first_name, user_last_name
-
-
 def fetch_emails(
     gmail: Resource, page_token: Optional[str]
 ) -> Tuple[List[Dict[str, Union[str, List[str]]]], Optional[str]]:
