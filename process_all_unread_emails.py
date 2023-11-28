@@ -2,11 +2,13 @@ import base64
 import os
 from typing import Dict, List, Optional, Tuple, Union
 
+import fire
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import Resource, build
 from openai import OpenAI
+from tqdm.auto import tqdm
 
 # If modifying these SCOPES, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/gmail.modify"]
@@ -128,8 +130,9 @@ def evaluate_email(
     user_first_name: str,
     user_last_name: str,
     client: OpenAI,
+    model: str = "gpt-3.5-turbo-1106",
+    MAX_EMAIL_LEN: int = 3000,
 ) -> bool:
-    MAX_EMAIL_LEN = 3000
     system_message: Dict[str, str] = {
         "role": "system",
         "content": (
@@ -190,7 +193,7 @@ def evaluate_email(
     # Send the messages to GPT-4, TODO add retry logic
     try:
         completion = client.chat.completions.create(
-            model="gpt-4",  # switch to gpt-3.5-turbo for faster/ cheaper results (might be slightly less accurate)
+            model=model,
             messages=[system_message, user_message],
             max_tokens=1,
             temperature=0.0,
@@ -210,9 +213,12 @@ def process_email(
     user_first_name: str,
     user_last_name: str,
     client: OpenAI,
+    model: str = "gpt-3.5-turbo-1106",
 ) -> int:
     # Evaluate email
-    if evaluate_email(email_data_parsed, user_first_name, user_last_name, client):
+    if evaluate_email(
+        email_data_parsed, user_first_name, user_last_name, client, model=model
+    ):
         print("Email is not worth the time, marking as read")
         # Remove UNREAD label
         try:
@@ -239,10 +245,14 @@ def report_statistics(
     )
 
 
-def main():
-    gmail = get_gmail_service()
+def main(
+    user_first_name: str,
+    user_last_name: str,
+    authorized_user_file: str = "token.json",
+    credentials_file: str = "credentials.json",
+):
+    gmail = get_gmail_service(authorized_user_file, credentials_file)
     client = get_openai_client()
-    user_first_name, user_last_name = get_user_name()
 
     page_token: Optional[str] = None
 
@@ -257,9 +267,9 @@ def main():
         print(f"Fetched page {total_pages_fetched} of emails")
 
         total_unread_emails += len(messages)
-        for (
-            message_info
-        ) in messages:  # TODO process emails on a single page in parallel
+        for message_info in tqdm(
+            messages
+        ):  # TODO process emails on a single page in parallel
             # Fetch and parse email data
             email_data_parsed = parse_email_data(gmail, message_info)
 
@@ -280,4 +290,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    fire.Fire(main)
