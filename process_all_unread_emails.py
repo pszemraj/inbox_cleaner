@@ -244,6 +244,7 @@ def main(
     user_last_name: str,
     authorized_user_file: str = "token.json",
     credentials_file: str = "credentials.json",
+    model: str = "gpt-3.5-turbo-1106",
 ):
     gmail = get_gmail_service(authorized_user_file, credentials_file)
     client = get_openai_client()
@@ -275,6 +276,7 @@ def main(
                 user_first_name,
                 user_last_name,
                 client,
+                model=model,
             )
 
         if not page_token:
