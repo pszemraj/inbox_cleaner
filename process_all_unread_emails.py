@@ -12,22 +12,25 @@ from openai import OpenAI
 SCOPES = ["https://www.googleapis.com/auth/gmail.modify"]
 
 
-def get_gmail_service():
+def get_gmail_service(
+    authorized_user_file: str = "token.json",
+    credentials_file: str = "credentials.json",
+):
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
-    if os.path.exists("token.json"):
-        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+    if os.path.exists(authorized_user_file):
+        creds = Credentials.from_authorized_user_file(authorized_user_file, SCOPES)
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file(credentials_file, SCOPES)
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
-        with open("token.json", "w") as token:
+        with open(authorized_user_file, "w", encoding="utf-8") as token:
             token.write(creds.to_json())
 
     return build("gmail", "v1", credentials=creds)
