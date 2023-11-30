@@ -1,5 +1,7 @@
 import base64
+import logging
 import os
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
 import fire
@@ -12,6 +14,14 @@ from tqdm.auto import tqdm
 
 # If modifying these SCOPES, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/gmail.modify"]
+_here = Path(__file__).parent
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    filename=_here / "process_all_unread_emails.log",
+    filemode="a",
+)
 
 
 def get_gmail_service(
@@ -58,7 +68,7 @@ def fetch_emails(
             .execute()
         )
     except Exception as e:
-        print(f"Failed to fetch emails: {e}")
+        logging.error(f"Failed to fetch emails: {e}")
         return [], None
 
     messages: List[Dict[str, Union[str, List[str]]]] = results.get("messages", [])
@@ -78,7 +88,7 @@ def parse_email_data(
             .execute()
         )
     except Exception as e:
-        print(f"Failed to fetch email data: {e}")
+        logging.error(f"Failed to fetch email data: {e}")
         return {}
 
     try:
@@ -92,10 +102,10 @@ def parse_email_data(
             (header["value"] for header in headers if header["name"] == "Cc"), None
         )
     except Exception as e:
-        print(f"Failed to parse email data: {e}")
+        logging.error(f"Failed to parse email data: {e}")
         return {}
 
-    print(f"Fetched email - Subject: {subject}, Sender: {sender}")
+    logging.debug(f"Fetched email - Subject: {subject}, Sender: {sender}")
 
     # Extract the plain text body
     parts = msg["payload"].get("parts", [])
@@ -193,7 +203,7 @@ def evaluate_email(
             temperature=0.0,
         )
     except Exception as e:
-        print(f"Failed to evaluate email with GPT-4: {e}")
+        logging.error(f"Failed to evaluate email with GPT-4: {e}")
         return False
 
     # Extract and return the response
@@ -213,29 +223,29 @@ def process_email(
     if evaluate_email(
         email_data_parsed, user_first_name, user_last_name, client, model=model
     ):
-        print("Email is not worth the time, marking as read")
+        logging.info("Email is not worth the time, marking as read")
         # Remove UNREAD label
         try:
             gmail.users().messages().modify(
                 userId="me", id=message_info["id"], body={"removeLabelIds": ["UNREAD"]}
             ).execute()
-            print("Email marked as read successfully")
+            logging.info("Email marked as read successfully")
             return 1
         except Exception as e:
-            print(f"Failed to mark email as read: {e}")
+            logging.error(f"Failed to mark email as read: {e}")
     else:
-        print("Email is worth the time, leaving as unread")
+        logging.info("Email is worth the time, leaving as unread")
     return 0
 
 
 def report_statistics(
     total_unread_emails: int, total_pages_fetched: int, total_marked_as_read: int
 ) -> None:
-    print(f"Total number of unread emails fetched: {total_unread_emails}")
-    print(f"Total number of pages fetched: {total_pages_fetched}")
-    print(f"Total number of emails marked as read: {total_marked_as_read}")
-    print(
-        f"Final number of unread emails: {total_unread_emails - total_marked_as_read}"
+    logging.info(
+        f"Total number of unread emails fetched: {total_unread_emails}\n"
+        f"Total number of pages fetched: {total_pages_fetched}\n"
+        f"Total number of emails marked as read: {total_marked_as_read}\n"
+        f"Final number of unread emails: {total_unread_emails - total_marked_as_read}\n"
     )
 
 
@@ -246,6 +256,17 @@ def main(
     credentials_file: str = "credentials.json",
     model: str = "gpt-3.5-turbo-1106",
 ):
+    """
+    main function
+
+    :param str user_first_name: _description_
+    :param str user_last_name: _description_
+    :param str authorized_user_file: _description_, defaults to "token.json"
+    :param str credentials_file: _description_, defaults to "credentials.json"
+    :param str model: _description_, defaults to "gpt-3.5-turbo-1106"
+    """
+
+    logging.info(f"Processing emails for {user_first_name} {user_last_name}")
     gmail = get_gmail_service(authorized_user_file, credentials_file)
     client = get_openai_client()
 
@@ -259,7 +280,7 @@ def main(
         # Fetch unread emails
         messages, page_token = fetch_emails(gmail, page_token)
         total_pages_fetched += 1
-        print(f"Fetched page {total_pages_fetched} of emails")
+        logging.info(f"Fetched page {total_pages_fetched} of emails")
 
         total_unread_emails += len(messages)
         for message_info in tqdm(messages, desc="Processing emails"):
@@ -279,9 +300,11 @@ def main(
             )
 
         if not page_token:
+            logging.info("No more pages of messages")
             break  # Exit the loop if there are no more pages of messages
 
     report_statistics(total_unread_emails, total_pages_fetched, total_marked_as_read)
+    logging.info("Finished processing emails")
 
 
 if __name__ == "__main__":
