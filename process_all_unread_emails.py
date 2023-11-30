@@ -262,9 +262,8 @@ def main(
         print(f"Fetched page {total_pages_fetched} of emails")
 
         total_unread_emails += len(messages)
-        for message_info in tqdm(
-            messages
-        ):  # TODO process emails on a single page in parallel
+        for message_info in tqdm(messages, desc="Processing emails"):
+            # TODO process emails on a single page in parallel
             # Fetch and parse email data
             email_data_parsed = parse_email_data(gmail, message_info)
 
