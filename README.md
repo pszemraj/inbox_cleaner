@@ -14,7 +14,7 @@ This script helps manage a Gmail inbox by filtering out promotional emails using
 1. Clone this repository:
 
    ```
-   git clone https://github.com/isafulf/inbox_cleaner.git
+   git clone https://github.com/pszemraj/inbox_cleaner.git
    cd inbox_cleaner
    ```
 
@@ -43,8 +43,8 @@ This script helps manage a Gmail inbox by filtering out promotional emails using
 
 Run the script:
 
-```
-python process_all_unread_emails.py
+```sh
+python process_all_unread_emails.py FIRST_NAME LAST_NAME
 ```
 
-When prompted, enter your first and last name. The script will then start processing your unread emails.
+The script will then start processing your unread emails.
