@@ -129,7 +129,7 @@ def evaluate_email(
     user_first_name: str,
     user_last_name: str,
     client: OpenAI,
-    model: str = "gpt-3.5-turbo-1106",
+    model: str = "gpt-4-turbo-preview",
     MAX_EMAIL_LEN: int = 5000,
 ) -> bool:
     system_message: Dict[str, str] = {
