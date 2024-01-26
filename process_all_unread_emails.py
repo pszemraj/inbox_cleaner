@@ -275,6 +275,8 @@ def main(
 
     logging.info(f"Processing emails for {user_first_name} {user_last_name}")
     gmail = get_gmail_service(authorized_user_file, credentials_file)
+
+    logging.info(f"Using model: {model}")
     client = OpenAI()
 
     page_token: Optional[str] = None
