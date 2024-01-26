@@ -212,7 +212,7 @@ def process_email(
     user_first_name: str,
     user_last_name: str,
     client: OpenAI,
-    model: str = "gpt-3.5-turbo-1106",
+    model: str = "gpt-4-turbo-preview",
 ) -> int:
     # Evaluate email
     if evaluate_email(
@@ -249,16 +249,17 @@ def main(
     user_last_name: str,
     authorized_user_file: str = "token.json",
     credentials_file: str = "credentials.json",
-    model: str = "gpt-3.5-turbo-1106",
+    model: str = "gpt-4-turbo-preview",
 ):
     """
-    main function
+    Main function to process emails for a user.
 
-    :param str user_first_name: _description_
-    :param str user_last_name: _description_
-    :param str authorized_user_file: _description_, defaults to "token.json"
-    :param str credentials_file: _description_, defaults to "credentials.json"
-    :param str model: _description_, defaults to "gpt-3.5-turbo-1106"
+    Args:
+    user_first_name (str): The first name of the user.
+    user_last_name (str): The last name of the user.
+    authorized_user_file (str, optional): The file containing authorized user information. Defaults to "token.json".
+    credentials_file (str, optional): The file containing user credentials. Defaults to "credentials.json".
+    model (str, optional): The model to be used for processing emails. Defaults to "gpt-4-turbo-preview".
     """
 
     logging.info(f"Processing emails for {user_first_name} {user_last_name}")
