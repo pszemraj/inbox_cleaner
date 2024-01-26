@@ -3,6 +3,7 @@ import logging
 import os
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
+import pprint as pp
 
 import fire
 from google.auth.transport.requests import Request
@@ -174,6 +175,16 @@ def evaluate_email(
             '"True" or "False"'
         ),
     }
+
+    # Check if 'body' key exists
+    if "body" in email_data:
+        truncated_body = email_data["body"][:MAX_EMAIL_LEN] + (
+            "..." if len(email_data["body"]) > MAX_EMAIL_LEN else ""
+        )
+    else:
+        logging.error(f"No 'body' key in email data - {pp.pformat(email_data)}")
+        return False
+
     truncated_body = email_data["body"][:MAX_EMAIL_LEN] + (
         "..." if len(email_data["body"]) > MAX_EMAIL_LEN else ""
     )
