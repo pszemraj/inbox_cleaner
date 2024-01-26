@@ -48,11 +48,6 @@ def get_gmail_service(
     return build("gmail", "v1", credentials=creds)
 
 
-def get_openai_client():
-    # Make sure that OPENAI_API_KEY is set in your environment
-    return OpenAI()
-
-
 def fetch_emails(
     gmail: Resource, page_token: Optional[str]
 ) -> Tuple[List[Dict[str, Union[str, List[str]]]], Optional[str]]:
@@ -135,7 +130,7 @@ def evaluate_email(
     user_last_name: str,
     client: OpenAI,
     model: str = "gpt-3.5-turbo-1106",
-    MAX_EMAIL_LEN: int = 3000,
+    MAX_EMAIL_LEN: int = 5000,
 ) -> bool:
     system_message: Dict[str, str] = {
         "role": "system",
@@ -203,7 +198,7 @@ def evaluate_email(
             temperature=0.0,
         )
     except Exception as e:
-        logging.error(f"Failed to evaluate email with GPT-4: {e}")
+        logging.error(f"Failed to evaluate email with {model}: {e}")
         return False
 
     # Extract and return the response
@@ -268,7 +263,7 @@ def main(
 
     logging.info(f"Processing emails for {user_first_name} {user_last_name}")
     gmail = get_gmail_service(authorized_user_file, credentials_file)
-    client = get_openai_client()
+    client = OpenAI()
 
     page_token: Optional[str] = None
 
@@ -300,8 +295,8 @@ def main(
             )
 
         if not page_token:
-            logging.info("No more pages of messages")
-            break  # Exit the loop if there are no more pages of messages
+            logging.info("No more pages of messages, exiting...")
+            break
 
     report_statistics(total_unread_emails, total_pages_fetched, total_marked_as_read)
     logging.info("Finished processing emails")
