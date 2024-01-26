@@ -1,2 +1,4 @@
-credentials.json
-token.json
+.ruff_cache
+*.json
+*.log
+*scratch*
