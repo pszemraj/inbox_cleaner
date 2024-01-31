@@ -29,6 +29,12 @@ def get_gmail_service(
     authorized_user_file: str = "token.json",
     credentials_file: str = "credentials.json",
 ):
+    """
+    Returns a Gmail service using the provided authorized user file and credentials
+    file. If the authorized user file exists, it uses the stored credentials;
+    otherwise, it prompts the user to log in and saves the obtained credentials
+    for future use. Returns the Gmail service.
+    """
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
@@ -52,6 +58,17 @@ def get_gmail_service(
 def fetch_emails(
     gmail: Resource, page_token: Optional[str]
 ) -> Tuple[List[Dict[str, Union[str, List[str]]]], Optional[str]]:
+    """
+    Fetch emails from the Gmail API using the provided page token.
+
+    Args:
+        gmail (Resource): The Gmail API resource object.
+        page_token (str): The page token for fetching the next page of emails.
+
+    Returns:
+        Tuple[List[Dict[str, Union[str, List[str]]]], Optional[str]]: A tuple containing a list of email messages
+        and an optional page token for fetching the next page of emails.
+    """
     try:
         results = (
             gmail.users()
@@ -75,6 +92,16 @@ def fetch_emails(
 def parse_email_data(
     gmail: Resource, message_info: Dict[str, Union[str, List[str]]]
 ) -> Dict[str, Union[str, List[str]]]:
+    """
+    Parses email data from a Gmail message and returns a dictionary containing subject, to, from, cc, labels, and body.
+
+    Args:
+        gmail (Resource): The Gmail resource to fetch email data.
+        message_info (Dict[str, Union[str, List[str]]]): Information about the email message.
+
+    Returns:
+        Dict[str, Union[str, List[str]]]: A dictionary containing parsed email data.
+    """
     # Fetch email data with 'full' format
     try:
         msg = (
@@ -133,6 +160,17 @@ def evaluate_email(
     model: str = "gpt-4-turbo-preview",
     MAX_EMAIL_LEN: int = 5000,
 ) -> bool:
+    """
+    evaluate_email - Evaluates an email for whether it is worth the time with an LLM
+
+    :param Dict[str, Union[str, List[str]]] email_data: object containing email data
+    :param str user_first_name: first name of the user
+    :param str user_last_name: last name of the user
+    :param OpenAI client: OpenAI client object
+    :param str model: GPT-4 model to use for evaluation, defaults to "gpt-4-turbo-preview"
+    :param int MAX_EMAIL_LEN: maximum length of the email, defaults to 5000 characters
+    :return bool: True if email is worth the time, False otherwise
+    """
     system_message: Dict[str, str] = {
         "role": "system",
         "content": (
@@ -225,11 +263,23 @@ def process_email(
     client: OpenAI,
     model: str = "gpt-4-turbo-preview",
 ) -> int:
+    """
+    process_email - Processes an email and marks it as read if it is not worth the time.
+
+    :param Resource gmail: gmail resource object
+    :param Dict[str, Union[str, List[str]]] message_info: email message info
+    :param Dict[str, Union[str, List[str]]] email_data_parsed: parsed email data from Gmail
+    :param str user_first_name: first name of the user
+    :param str user_last_name: last name of the user
+    :param OpenAI client: OpenAI client
+    :param str model: GPT-4 model to use for evaluation, defaults to "gpt-4-turbo-preview"
+    :return int: 1 if email is marked as read, 0 otherwise
+    """
+
     # Safely get subject and sender with fallbacks
     subject = email_data_parsed.get("subject", "No Subject")
     sender = email_data_parsed.get("from", "Unknown Sender")
 
-    # Format subject for logging
     subject_snippet = (subject[:50] + "...") if len(subject) > 50 else subject
 
     # Evaluate email
