@@ -20,7 +20,7 @@ _here = Path(__file__).parent
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    filename=_here / "process_all_unread_emails.log",
+    filename=_here / "LOG-process_all_unread_emails.log",
     filemode="a",
 )
 
@@ -225,11 +225,20 @@ def process_email(
     client: OpenAI,
     model: str = "gpt-4-turbo-preview",
 ) -> int:
+    # Safely get subject and sender with fallbacks
+    subject = email_data_parsed.get("subject", "No Subject")
+    sender = email_data_parsed.get("from", "Unknown Sender")
+
+    # Format subject for logging
+    subject_snippet = (subject[:50] + "...") if len(subject) > 50 else subject
+
     # Evaluate email
     if evaluate_email(
         email_data_parsed, user_first_name, user_last_name, client, model=model
     ):
-        logging.info("Email is not worth the time, marking as read")
+        logging.info(
+            f"Email '{subject_snippet}' from '{sender}' is not worth the time, marking as read"
+        )
         # Remove UNREAD label
         try:
             gmail.users().messages().modify(
@@ -240,7 +249,9 @@ def process_email(
         except Exception as e:
             logging.error(f"Failed to mark email as read: {e}")
     else:
-        logging.info("Email is worth the time, leaving as unread")
+        logging.info(
+            f"Email '{subject_snippet}' from '{sender}' is worth the time, leaving as unread"
+        )
     return 0
 
 
