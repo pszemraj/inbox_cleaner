@@ -67,6 +67,4 @@ This document provides a step-by-step guide to setting up OAuth 2.0 credentials 
 - Only request the scopes necessary for your application's functionality.
 - Keep your `credentials.json` and `token.json` files secure and do not expose them publicly.
 
-## Conclusion
-
-Following this guide will help you set up OAuth 2.0 credentials for your application, enabling it to interact with the Gmail API to read, modify, and send emails on behalf of a user.
+---
