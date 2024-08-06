@@ -294,7 +294,7 @@ def process_email(
             gmail.users().messages().modify(
                 userId="me", id=message_info["id"], body={"removeLabelIds": ["UNREAD"]}
             ).execute()
-            logging.info("Email marked as read successfully")
+            logging.debug("Email marked as read successfully")
             return 1
         except Exception as e:
             logging.error(f"Failed to mark email as read: {e}")
@@ -350,7 +350,7 @@ def main(
         # Fetch unread emails
         messages, page_token = fetch_emails(gmail, page_token)
         total_pages_fetched += 1
-        logging.info(f"Fetched page {total_pages_fetched} of emails")
+        logging.debug(f"Fetched page {total_pages_fetched} of emails")
 
         total_unread_emails += len(messages)
         for message_info in tqdm(messages, desc="Processing emails"):
