@@ -39,6 +39,10 @@ This document provides a step-by-step guide to setting up OAuth 2.0 credentials 
 2. **Download Credentials**:
    - Download the credentials JSON file once the client ID is created.
    - Save this file as `credentials.json` in your application's directory.
+   - then you can run the script.
+
+> [!IMPORTANT]
+> When returning to this repo down the road, make sure to remove the generated `token.json` file before running the script again. (it will be regenerated again and prompt you)
 
 ## Testing and Verification
 
