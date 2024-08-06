@@ -24,6 +24,9 @@ logging.basicConfig(
     filemode="a",
 )
 
+# set logger from httpx to error
+logging.getLogger("httpx").setLevel(logging.ERROR)
+
 
 def get_gmail_service(
     authorized_user_file: str = "token.json",
