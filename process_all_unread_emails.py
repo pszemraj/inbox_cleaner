@@ -24,6 +24,9 @@ logging.basicConfig(
     filemode="a",
 )
 
+# set logger from httpx to error
+logging.getLogger("httpx").setLevel(logging.ERROR)
+
 
 def get_gmail_service(
     authorized_user_file: str = "token.json",
@@ -157,7 +160,7 @@ def evaluate_email(
     user_first_name: str,
     user_last_name: str,
     client: OpenAI,
-    model: str = "gpt-4-turbo-preview",
+    model: str = "gpt-4o",
     MAX_EMAIL_LEN: int = 5000,
 ) -> bool:
     """
@@ -167,50 +170,62 @@ def evaluate_email(
     :param str user_first_name: first name of the user
     :param str user_last_name: last name of the user
     :param OpenAI client: OpenAI client object
-    :param str model: GPT-4 model to use for evaluation, defaults to "gpt-4-turbo-preview"
+    :param str model: GPT-4 model to use for evaluation, defaults to "gpt-4o"
     :param int MAX_EMAIL_LEN: maximum length of the email, defaults to 5000 characters
-    :return bool: True if email is worth the time, False otherwise
+    :return bool: True if email should be marked as read, False otherwise
     """
     system_message: Dict[str, str] = {
         "role": "system",
         "content": (
-            "Your task is to assist in managing the Gmail inbox of a busy individual, "
-            f"{user_first_name} {user_last_name}, by filtering out promotional emails "
-            "from her personal (i.e., not work) account. Your primary focus is to ensure "
-            "that emails from individual people, whether they are known family members (with the "
-            f"same last name), close acquaintances, or potential contacts {user_first_name} might be interested "
-            "in hearing from, are not ignored. You need to distinguish between promotional, automated, "
-            "or mass-sent emails and personal communications.\n\n"
-            'Respond with "True" if the email is promotional and should be ignored based on '
-            'the below criteria, or "False" otherwise. Remember to prioritize personal '
-            "communications and ensure emails from genuine individuals are not filtered out.\n\n"
-            "Criteria for Ignoring an Email:\n"
-            "- The email is promotional: It contains offers, discounts, or is marketing a product "
-            "or service.\n"
-            "- The email is automated: It is sent by a system or service automatically, and not a "
-            "real person.\n"
-            "- The email appears to be mass-sent or from a non-essential mailing list: It does not "
-            f"address {user_first_name} by name, lacks personal context that would indicate it's personally written "
-            "to her, or is from a mailing list that does not pertain to her interests or work.\n\n"
-            "Special Consideration:\n"
-            "- Exception: If the email is from an actual person, especially a family member (with the "
-            f"same last name), a close acquaintance, or a potential contact {user_first_name} might be interested in, "
-            "and contains personalized information indicating a one-to-one communication, do not mark "
-            "it for ignoring regardless of the promotional content.\n\n"
-            "- Additionally, do not ignore emails requiring an action to be taken for important matters, "
-            "such as needing to send a payment via Venmo, but ignore requests for non-essential actions "
-            "like purchasing discounted items or signing up for rewards programs.\n\n"
-            "Be cautious: If there's any doubt about whether an email is promotional or personal, "
-            'respond with "False".\n\n'
-            "The user message you will receive will have the following format:\n"
+            f"As an AI assistant, your task is to manage the Gmail inbox of {user_first_name} {user_last_name} "
+            "by identifying promotional emails, unimportant notifications, and filler content in their personal account. "
+            "Your primary goal is to ensure that personal communications and important messages are not mistakenly filtered out.\n\n"
+            'Respond with "True" if the email should be marked as read (promotional/automated/unimportant), or "False" if it '
+            "should remain unread (personal/important).\n\n"
+            "Email Classification Process:\n"
+            "1. Sender Analysis:\n"
+            f"   - If the sender's name includes '{user_last_name}' or is a known acquaintance, likely personal.\n"
+            "   - Check if the sender's email is from a personal domain (e.g., gmail.com, outlook.com) vs. a company domain.\n"
+            "2. Subject Line Review:\n"
+            "   - Look for promotional keywords like 'offer', 'discount', 'sale', 'newsletter'.\n"
+            "   - Identify notification-type subjects like 'Your daily summary', 'New post from...', 'You have new likes'.\n"
+            "   - Personal subjects often include names, personal references, or specific non-promotional topics.\n"
+            "3. Email Body Examination:\n"
+            f"   - Personal emails often address {user_first_name} by name and contain personalized content.\n"
+            "   - Promotional emails typically have generic greetings and focus on products/services.\n"
+            "   - Notifications often contain updates that don't require immediate action.\n"
+            "4. Consider Context and Importance:\n"
+            "   - Emails requiring action (e.g., Venmo payments, account verifications) should not be marked as read.\n"
+            "   - Emails from critical sources (banks, government, schools) should remain unread.\n"
+            "   - Routine notifications from social media, apps, or services can often be marked as read.\n\n"
+            "Examples of Emails to Mark as Read (True):\n"
+            "- Promotional: 'Your Weekly Newsletter from XYZ', 'Flash Sale: 50% Off Today Only!'\n"
+            "- Notifications: 'Your daily LinkedIn update', 'New followers on Twitter', 'Your screen time report'\n"
+            "- Filler Content: 'Check out what's new on our platform', 'Your monthly horoscope is ready'\n"
+            "- Automated: Emails from 'noreply@' addresses, 'Your order has shipped' (unless it's a high-value item)\n\n"
+            "Examples of Emails to Keep Unread (False):\n"
+            f"- 'Dinner plans for Saturday?' from a '{user_last_name}' family member\n"
+            "- 'Your account statement is ready' from a bank\n"
+            f"- 'Following up on our conversation' addressed specifically to {user_first_name}\n"
+            "- 'Action required: Verify your account' from a critical service\n"
+            "- Emails mentioning shared experiences or containing personal questions/information\n"
+            "- 'Your prescription is ready for pickup' from a pharmacy\n\n"
+            "Additional Guidelines:\n"
+            "- Mark as read recurring notifications that don't typically require action (e.g., weekly app usage summaries).\n"
+            "- Keep unread any notifications about account security, payments, or important updates to services.\n"
+            "- For subscriptions or newsletters, consider the value and frequency. High-value, low-frequency content "
+            "might be worth keeping unread, while daily updates from the same source could be marked as read.\n"
+            "- Be cautious with emails from professional networks or job-related services, as these might contain "
+            "important opportunities.\n\n"
+            "When in doubt, err on the side of caution and respond with 'False' to avoid missing important communications.\n\n"
+            "The email information will be provided in this format:\n"
             "Subject: <email subject>\n"
             "To: <to names, to emails>\n"
             "From: <from name, from email>\n"
             "Cc: <cc names, cc emails>\n"
             "Gmail labels: <labels>\n"
             "Body: <plaintext body of the email>\n\n"
-            "Your response must be:\n"
-            '"True" or "False"'
+            'Your response must be only "True" or "False".'
         ),
     }
 
@@ -261,7 +276,7 @@ def process_email(
     user_first_name: str,
     user_last_name: str,
     client: OpenAI,
-    model: str = "gpt-4-turbo-preview",
+    model: str = "gpt-4o",
 ) -> int:
     """
     process_email - Processes an email and marks it as read if it is not worth the time.
@@ -272,7 +287,7 @@ def process_email(
     :param str user_first_name: first name of the user
     :param str user_last_name: last name of the user
     :param OpenAI client: OpenAI client
-    :param str model: GPT-4 model to use for evaluation, defaults to "gpt-4-turbo-preview"
+    :param str model: GPT-4 model to use for evaluation, defaults to "gpt-4o"
     :return int: 1 if email is marked as read, 0 otherwise
     """
 
@@ -294,7 +309,7 @@ def process_email(
             gmail.users().messages().modify(
                 userId="me", id=message_info["id"], body={"removeLabelIds": ["UNREAD"]}
             ).execute()
-            logging.info("Email marked as read successfully")
+            logging.debug("Email marked as read successfully")
             return 1
         except Exception as e:
             logging.error(f"Failed to mark email as read: {e}")
@@ -321,7 +336,7 @@ def main(
     user_last_name: str,
     authorized_user_file: str = "token.json",
     credentials_file: str = "credentials.json",
-    model: str = "gpt-4-turbo-preview",
+    model: str = "gpt-4o",
 ):
     """
     Main function to process emails for a user.
@@ -331,14 +346,14 @@ def main(
     user_last_name (str): The last name of the user.
     authorized_user_file (str, optional): The file containing authorized user information. Defaults to "token.json".
     credentials_file (str, optional): The file containing user credentials. Defaults to "credentials.json".
-    model (str, optional): The model to be used for processing emails. Defaults to "gpt-4-turbo-preview".
+    model (str, optional): The model to be used for processing emails. Defaults to "gpt-4o".
     """
 
     logging.info(f"Processing emails for {user_first_name} {user_last_name}")
     gmail = get_gmail_service(authorized_user_file, credentials_file)
 
     logging.info(f"Using model: {model}")
-    client = OpenAI()
+    client = OpenAI(max_retries=5, timeout=180)
 
     page_token: Optional[str] = None
 
@@ -350,7 +365,7 @@ def main(
         # Fetch unread emails
         messages, page_token = fetch_emails(gmail, page_token)
         total_pages_fetched += 1
-        logging.info(f"Fetched page {total_pages_fetched} of emails")
+        logging.debug(f"Fetched page {total_pages_fetched} of emails")
 
         total_unread_emails += len(messages)
         for message_info in tqdm(messages, desc="Processing emails"):
