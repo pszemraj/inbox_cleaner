@@ -157,7 +157,7 @@ def evaluate_email(
     user_first_name: str,
     user_last_name: str,
     client: OpenAI,
-    model: str = "gpt-4-turbo-preview",
+    model: str = "gpt-4o",
     MAX_EMAIL_LEN: int = 5000,
 ) -> bool:
     """
@@ -167,7 +167,7 @@ def evaluate_email(
     :param str user_first_name: first name of the user
     :param str user_last_name: last name of the user
     :param OpenAI client: OpenAI client object
-    :param str model: GPT-4 model to use for evaluation, defaults to "gpt-4-turbo-preview"
+    :param str model: GPT-4 model to use for evaluation, defaults to "gpt-4o"
     :param int MAX_EMAIL_LEN: maximum length of the email, defaults to 5000 characters
     :return bool: True if email is worth the time, False otherwise
     """
@@ -261,7 +261,7 @@ def process_email(
     user_first_name: str,
     user_last_name: str,
     client: OpenAI,
-    model: str = "gpt-4-turbo-preview",
+    model: str = "gpt-4o",
 ) -> int:
     """
     process_email - Processes an email and marks it as read if it is not worth the time.
@@ -272,7 +272,7 @@ def process_email(
     :param str user_first_name: first name of the user
     :param str user_last_name: last name of the user
     :param OpenAI client: OpenAI client
-    :param str model: GPT-4 model to use for evaluation, defaults to "gpt-4-turbo-preview"
+    :param str model: GPT-4 model to use for evaluation, defaults to "gpt-4o"
     :return int: 1 if email is marked as read, 0 otherwise
     """
 
@@ -321,7 +321,7 @@ def main(
     user_last_name: str,
     authorized_user_file: str = "token.json",
     credentials_file: str = "credentials.json",
-    model: str = "gpt-4-turbo-preview",
+    model: str = "gpt-4o",
 ):
     """
     Main function to process emails for a user.
@@ -331,7 +331,7 @@ def main(
     user_last_name (str): The last name of the user.
     authorized_user_file (str, optional): The file containing authorized user information. Defaults to "token.json".
     credentials_file (str, optional): The file containing user credentials. Defaults to "credentials.json".
-    model (str, optional): The model to be used for processing emails. Defaults to "gpt-4-turbo-preview".
+    model (str, optional): The model to be used for processing emails. Defaults to "gpt-4o".
     """
 
     logging.info(f"Processing emails for {user_first_name} {user_last_name}")
