@@ -350,7 +350,7 @@ def main(
     gmail = get_gmail_service(authorized_user_file, credentials_file)
 
     logging.info(f"Using model: {model}")
-    client = OpenAI()
+    client = OpenAI(max_retries=5, timeout=180)
 
     page_token: Optional[str] = None
 
